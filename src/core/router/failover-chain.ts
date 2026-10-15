@@ -171,4 +171,137 @@ export class FailoverChain extends EventEmitter {
     (error as any).failoverHops = failoverHops;
     throw error;
   }
+
+  public async routeRequestStream(
+    request: NormalizedLLMRequest,
+    dispatchedModel: string,
+    requestId: string,
+    onChunk: (delta: string) => void
+  ): Promise<RouteExecutionResult> {
+    const chain = this.priorityOrder.length > 0 ? this.priorityOrder : Array.from(this.providers.keys());
+    const primaryProvider = chain[0] || 'default';
+    const failoverHops: FailoverHop[] = [];
+    let lastError: any = null;
+
+    const overallStartTime = Date.now();
+
+    for (let i = 0; i < chain.length; i++) {
+      const providerId = chain[i];
+      const provider = this.providers.get(providerId);
+
+      if (!provider) continue;
+
+      if (!this.circuitBreaker.canExecute(providerId)) {
+        const status = this.circuitBreaker.getStatus(providerId);
+        failoverHops.push({
+          providerId,
+          model: dispatchedModel,
+          timestamp: Date.now(),
+          statusCode: 503,
+          errorMessage: `Circuit is OPEN (${status.failureCount} recent errors). Short-circuited in 0ms.`,
+          latencyMs: 0
+        });
+
+        this.ledger.recordFailover({
+          requestId,
+          tenantId: request.tenantId,
+          attemptedProvider: providerId,
+          failedStatusCode: 503,
+          errorMessage: 'Circuit OPEN - stream short-circuited',
+          nextProvider: chain[i + 1] || 'NONE'
+        });
+
+        continue;
+      }
+
+      const hopStartTime = Date.now();
+      let chunksEmitted = 0;
+
+      try {
+        let response: NormalizedLLMResponse;
+
+        if (provider.executeStream) {
+          response = await provider.executeStream(request, dispatchedModel, (chunk) => {
+            chunksEmitted++;
+            onChunk(chunk);
+          });
+        } else {
+          // Normal execute with synthetic token stream buffering
+          response = await provider.execute(request, dispatchedModel);
+          const words = response.content.split(' ');
+          for (let w = 0; w < words.length; w++) {
+            const piece = w === 0 ? words[w] : ` ${words[w]}`;
+            chunksEmitted++;
+            onChunk(piece);
+          }
+        }
+
+        const latencyMs = Date.now() - hopStartTime;
+        this.circuitBreaker.recordSuccess(providerId, latencyMs);
+
+        const costUsd = this.costCalculator.calculateCostUsd(response.model, response.usage);
+        const failoverOccurred = providerId !== primaryProvider || failoverHops.length > 0;
+
+        return {
+          response,
+          resolvedProvider: providerId,
+          primaryProvider,
+          dispatchedModel,
+          failoverOccurred,
+          failoverHops,
+          latencyMs: Date.now() - overallStartTime,
+          costUsd
+        };
+      } catch (err: any) {
+        // If chunks were already emitted to client, we cannot fail over safely mid-stream
+        if (chunksEmitted > 0) {
+          throw err;
+        }
+
+        const latencyMs = Date.now() - hopStartTime;
+        const statusCode = (err as ProviderExecutionError).statusCode || 500;
+        const errorMessage = err.message || 'Stream provider failed before first chunk';
+
+        this.circuitBreaker.recordFailure(providerId, statusCode, errorMessage, latencyMs);
+
+        failoverHops.push({
+          providerId,
+          model: dispatchedModel,
+          timestamp: Date.now(),
+          statusCode,
+          errorMessage,
+          latencyMs
+        });
+
+        const nextProvider = chain[i + 1] || 'NONE';
+
+        this.ledger.recordFailover({
+          requestId,
+          tenantId: request.tenantId,
+          attemptedProvider: providerId,
+          failedStatusCode: statusCode,
+          errorMessage,
+          nextProvider
+        });
+
+        this.emit('failoverHop', {
+          requestId,
+          attemptedProvider: providerId,
+          statusCode,
+          errorMessage,
+          nextProvider
+        });
+
+        lastError = err;
+      }
+    }
+
+    const error = new Error(
+      `All streaming providers failed: ${lastError?.message || 'Exhausted chain'}`
+    ) as ProviderExecutionError;
+    error.statusCode = 503;
+    error.providerId = primaryProvider;
+    (error as any).failoverHops = failoverHops;
+    throw error;
+  }
 }

@@ -384,6 +384,10 @@ export class SQLiteLedger {
     };
   }
 
+  public getRawDb(): DatabaseSyncType {
+    return this.db;
+  }
+
   public close(): void {
     this.db.close();
   }

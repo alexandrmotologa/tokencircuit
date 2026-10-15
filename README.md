@@ -62,13 +62,17 @@ flowchart TD
     FailoverRouter -.->|On Cascade Failure| OpenAI["OpenAI Direct"]
 ```
 
-## Core Capabilities
-
 * Three-State Circuit Breaker: Standard `CLOSED`, `OPEN`, and `HALF_OPEN` state transitions. Trips to `OPEN` on 3 consecutive 5xx/429 errors within 30 seconds. Bypasses failing providers in under 0.2ms without waiting for connection timeouts.
 * Multi-Provider Failover Chains: Priority routing across AWS Bedrock, Anthropic Direct, and OpenAI. Normalizes request payloads and response envelopes in flight.
+* SSE Streaming Failover Buffer: Buffers initial tokens during stream handshakes. If a primary provider drops connection before initial chunks emit, TokenCircuit transparently fails over to secondary models without severing client SSE streams.
 * Hard Budget Enforcement: Daily and monthly dollar caps per tenant. Automatically downgrades models (e.g. Claude 3.5 Sonnet to Haiku) at 80% quota; cleanly rejects requests with HTTP 402 at 100%.
+* Prompt and Token Cache: Content-addressed SQLite cache with configurable TTL and zero-cost hits, reducing token costs and latency for repetitive agent tool contexts.
+* Tenant Sliding-Window Rate Limiter: Independent RPM and TPM rate limiters per tenant that emit HTTP 429 with standard `Retry-After` headers before upstream provider quotas trigger.
+* Multi-Key Provider Vault: Dynamic round-robin API key pools per provider with automatic temporary cooldown on upstream 429 rate limit errors.
 * Agent Loop Breaker: Uses sliding-window SHA-256 argument fingerprints to detect and terminate repetitive tool calls and ping-pong cycles before token exhaustion.
-* Embedded React 19 Control Studio: Dark mode interface displaying real-time circuit state toggles, tenant spend progress bars, failover stream, and an emergency global kill-switch.
+* Incident Webhook Dispatcher: Automated webhook dispatching to Slack, Discord, and incident receivers on circuit trips, budget exhaustion, or runaway loop terminations.
+* OpenMetrics Prometheus Exporter: Native `/metrics` endpoint exporting circuit states, failover counters, tenant spend, and P95 latency metrics for Grafana dashboards.
+* Embedded React 19 Control Studio: Dark mode interface displaying real-time circuit state toggles, tenant spend progress bars, interactive inference playground, failover stream, and an emergency global kill-switch.
 
 ---
 

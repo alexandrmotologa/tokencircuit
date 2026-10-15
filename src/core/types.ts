@@ -28,6 +28,7 @@ export interface CircuitBreakerConfig {
   recoveryTimeMs: number;
   halfOpenProbes: number;
   errorCodes: number[];
+  maxP95LatencyMs?: number;
 }
 
 export interface TenantBudget {

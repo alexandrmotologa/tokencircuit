@@ -11,6 +11,12 @@ export { AgentLoopGuard } from './core/loop-detector/agent-loop-guard.js';
 export { SQLiteLedger } from './core/storage/ledger.js';
 export { FailoverChain } from './core/router/failover-chain.js';
 export { PayloadTranslator } from './core/router/translator.js';
+export { PromptCache } from './core/cache/prompt-cache.js';
+export { TenantRateLimiter } from './core/ratelimit/tenant-rate-limiter.js';
+export { KeyVault } from './core/vault/key-vault.js';
+export { WebhookDispatcher } from './core/alerts/webhook-dispatcher.js';
+export { PrometheusExporter } from './core/metrics/prometheus-exporter.js';
+export { AuditExporter } from './core/export/audit-exporter.js';
 export { TokenCircuitGateway } from './server/gateway-server.js';
 
 export { BedrockProvider } from './providers/bedrock.js';

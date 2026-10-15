@@ -73,6 +73,19 @@ export class CircuitBreakerManager extends EventEmitter {
     this.monitor.recordSuccess(providerId, latencyMs);
     const currentState = this.getState(providerId);
 
+    // Check Latency SLA breach
+    if (this.config.maxP95LatencyMs && this.config.maxP95LatencyMs > 0 && currentState === 'CLOSED') {
+      const metrics = this.monitor.getLatencyMetrics(providerId);
+      if (metrics.p95 >= this.config.maxP95LatencyMs) {
+        this.transitionTo(
+          providerId,
+          'OPEN',
+          `Latency SLA breached: P95 latency ${metrics.p95}ms exceeds SLA cap of ${this.config.maxP95LatencyMs}ms`
+        );
+        return;
+      }
+    }
+
     if (currentState === 'HALF_OPEN') {
       const probeCount = (this.successiveProbeSuccesses.get(providerId) ?? 0) + 1;
       this.successiveProbeSuccesses.set(providerId, probeCount);

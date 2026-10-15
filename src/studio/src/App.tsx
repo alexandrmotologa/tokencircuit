@@ -3,13 +3,11 @@ import {
   Zap,
   Activity,
   DollarSign,
-  Layers,
   Ban,
   RefreshCw,
-  Server,
-  ShieldCheck,
   TrendingUp,
-  Clock
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import type { ProviderCircuitStatus, TenantBudget } from '../../core/types.js';
 import { CircuitStatusGrid } from './components/CircuitStatusGrid.js';
@@ -18,6 +16,11 @@ import { FailoverLogStream } from './components/FailoverLogStream.js';
 import { EmergencyKillSwitch } from './components/EmergencyKillSwitch.js';
 import { AgentLoopInspector } from './components/AgentLoopInspector.js';
 import { ChaosSimulatorModal } from './components/ChaosSimulatorModal.js';
+import { InferencePlayground } from './components/InferencePlayground.js';
+import { CacheInspector } from './components/CacheInspector.js';
+import { RateLimitInspector, type TenantRateLimitInfo } from './components/RateLimitInspector.js';
+import { WebhookSettings } from './components/WebhookSettings.js';
+import { AuditExportBar } from './components/AuditExportBar.js';
 
 export default function App() {
   const [circuits, setCircuits] = useState<ProviderCircuitStatus[]>([]);
@@ -30,6 +33,16 @@ export default function App() {
     totalSavingsUsd: 0,
     uptimeSeconds: 0
   });
+  const [cacheStats, setCacheStats] = useState({
+    totalEntries: 0,
+    hitCount: 0,
+    missCount: 0,
+    totalCostSavedUsd: 0
+  });
+  const [rateLimits, setRateLimits] = useState<TenantRateLimitInfo[]>([]);
+  const [webhookConfigured, setWebhookConfigured] = useState(false);
+  const [webhookHistory, setWebhookHistory] = useState<any[]>([]);
+
   const [killSwitch, setKillSwitch] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [failovers, setFailovers] = useState<any[]>([]);
@@ -37,9 +50,11 @@ export default function App() {
 
   const fetchStatus = async () => {
     try {
-      const [statusRes, logsRes] = await Promise.all([
+      const [statusRes, logsRes, rateRes, webhooksRes] = await Promise.all([
         fetch('/api/studio/status'),
-        fetch('/api/studio/logs')
+        fetch('/api/studio/logs'),
+        fetch('/api/studio/ratelimit'),
+        fetch('/api/studio/webhooks')
       ]);
 
       if (statusRes.ok) {
@@ -47,13 +62,26 @@ export default function App() {
         setCircuits(data.circuits || []);
         setTenants(data.tenants || []);
         setMetrics(data.metrics || {});
+        setCacheStats(data.cacheStats || { totalEntries: 0, hitCount: 0, missCount: 0, totalCostSavedUsd: 0 });
         setKillSwitch(Boolean(data.killSwitch));
+        setWebhookConfigured(Boolean(data.webhookConfigured));
       }
 
       if (logsRes.ok) {
         const logs = await logsRes.json();
         setTransactions(logs.transactions || []);
         setFailovers(logs.failovers || []);
+      }
+
+      if (rateRes.ok) {
+        const rates = await rateRes.json();
+        setRateLimits(rates || []);
+      }
+
+      if (webhooksRes.ok) {
+        const wh = await webhooksRes.json();
+        setWebhookHistory(wh.history || []);
+        setWebhookConfigured(Boolean(wh.configured));
       }
     } catch {
       // Server may be in initialization
@@ -220,6 +248,15 @@ export default function App() {
         {/* Chaos Lab & Simulator */}
         <ChaosSimulatorModal onRefresh={fetchStatus} />
 
+        {/* Interactive Live Inference Playground */}
+        <InferencePlayground tenants={tenants} onExecutionComplete={fetchStatus} />
+
+        {/* Prompt Cache & Tenant Rate Limiting */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CacheInspector stats={cacheStats} onRefresh={fetchStatus} />
+          <RateLimitInspector limits={rateLimits} onRefresh={fetchStatus} />
+        </div>
+
         {/* Budget Ledgers Section */}
         <BudgetMeters tenants={tenants} onUpdateTenant={handleUpdateTenant} />
 
@@ -231,6 +268,16 @@ export default function App() {
           totalLoopsBlocked={metrics.totalLoopsBlocked}
           totalSavingsUsd={metrics.totalSavingsUsd}
         />
+
+        {/* On-Call Webhook Alerts */}
+        <WebhookSettings
+          webhookConfigured={webhookConfigured}
+          history={webhookHistory}
+          onRefresh={fetchStatus}
+        />
+
+        {/* Audit & Compliance Exports Bar */}
+        <AuditExportBar />
       </main>
 
       {/* Footer */}

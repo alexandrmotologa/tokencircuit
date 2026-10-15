@@ -1,6 +1,7 @@
 import type { NormalizedLLMRequest, NormalizedLLMResponse } from '../core/types.js';
 import type { LLMProvider, ProviderExecutionError } from './base.js';
 import { PayloadTranslator } from '../core/router/translator.js';
+import type { KeyVault } from '../core/vault/key-vault.js';
 
 export class OpenAIProvider implements LLMProvider {
   public id = 'openai';
@@ -8,11 +9,13 @@ export class OpenAIProvider implements LLMProvider {
   private apiKey?: string;
   private endpoint: string;
   private timeoutMs: number;
+  private keyVault?: KeyVault;
 
-  constructor(options?: { apiKey?: string; endpoint?: string; timeoutMs?: number }) {
+  constructor(options?: { apiKey?: string; endpoint?: string; timeoutMs?: number; keyVault?: KeyVault }) {
     this.apiKey = options?.apiKey || process.env.OPENAI_API_KEY;
     this.endpoint = options?.endpoint || 'https://api.openai.com/v1/chat/completions';
     this.timeoutMs = options?.timeoutMs || 15000;
+    this.keyVault = options?.keyVault;
   }
 
   public async execute(
@@ -20,8 +23,9 @@ export class OpenAIProvider implements LLMProvider {
     modelOverride?: string
   ): Promise<NormalizedLLMResponse> {
     const payload = PayloadTranslator.toOpenAIPayload(request, modelOverride);
+    const activeKey = this.keyVault?.getActiveKey(this.id) || this.apiKey;
 
-    if (!this.apiKey || this.apiKey.startsWith('sk-proj-...')) {
+    if (!activeKey || activeKey.startsWith('sk-proj-...')) {
       // Mock execution if real key is not supplied
       await new Promise((r) => setTimeout(r, 60));
       return {
@@ -46,7 +50,7 @@ export class OpenAIProvider implements LLMProvider {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`
+          Authorization: `Bearer ${activeKey}`
         },
         body: JSON.stringify(payload),
         signal: controller.signal
@@ -54,6 +58,9 @@ export class OpenAIProvider implements LLMProvider {
 
       if (!res.ok) {
         const text = await res.text();
+        if (res.status === 429 && this.keyVault) {
+          this.keyVault.markKeyRateLimited(this.id, activeKey);
+        }
         const err = new Error(
           `OpenAI API error (${res.status}): ${text}`
         ) as ProviderExecutionError;

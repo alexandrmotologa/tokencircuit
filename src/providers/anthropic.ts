@@ -1,6 +1,7 @@
 import type { NormalizedLLMRequest, NormalizedLLMResponse } from '../core/types.js';
 import type { LLMProvider, ProviderExecutionError } from './base.js';
 import { PayloadTranslator } from '../core/router/translator.js';
+import type { KeyVault } from '../core/vault/key-vault.js';
 
 export class AnthropicProvider implements LLMProvider {
   public id = 'anthropic';
@@ -8,11 +9,13 @@ export class AnthropicProvider implements LLMProvider {
   private apiKey?: string;
   private endpoint: string;
   private timeoutMs: number;
+  private keyVault?: KeyVault;
 
-  constructor(options?: { apiKey?: string; endpoint?: string; timeoutMs?: number }) {
+  constructor(options?: { apiKey?: string; endpoint?: string; timeoutMs?: number; keyVault?: KeyVault }) {
     this.apiKey = options?.apiKey || process.env.ANTHROPIC_API_KEY;
     this.endpoint = options?.endpoint || 'https://api.anthropic.com/v1/messages';
     this.timeoutMs = options?.timeoutMs || 15000;
+    this.keyVault = options?.keyVault;
   }
 
   public async execute(
@@ -21,7 +24,9 @@ export class AnthropicProvider implements LLMProvider {
   ): Promise<NormalizedLLMResponse> {
     const payload = PayloadTranslator.toAnthropicPayload(request, modelOverride);
 
-    if (!this.apiKey || this.apiKey.startsWith('sk-ant-api03-...')) {
+    const activeKey = this.keyVault?.getActiveKey(this.id) || this.apiKey;
+
+    if (!activeKey || activeKey.startsWith('sk-ant-api03-...')) {
       // Mock execution if real key is not supplied
       await new Promise((r) => setTimeout(r, 60));
       return {
@@ -46,7 +51,7 @@ export class AnthropicProvider implements LLMProvider {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': this.apiKey,
+          'x-api-key': activeKey,
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify(payload),
@@ -55,6 +60,9 @@ export class AnthropicProvider implements LLMProvider {
 
       if (!res.ok) {
         const text = await res.text();
+        if (res.status === 429 && this.keyVault) {
+          this.keyVault.markKeyRateLimited(this.id, activeKey);
+        }
         const err = new Error(
           `Anthropic API error (${res.status}): ${text}`
         ) as ProviderExecutionError;

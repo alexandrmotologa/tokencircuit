@@ -176,6 +176,43 @@ async function capture() {
   // Seed loop detection
   gateway.ledger.recordLoopDetection('autonomous-researcher', 'search_codebase', 'sha256_e81b...', 4, 18.50);
 
+  // Seed Prompt Cache (Zero-Cost Hits)
+  gateway.promptCache.set(
+    'gpt-4o',
+    [{ role: 'user', content: 'What is TokenCircuit?' }],
+    { id: 'chatcmpl_c1', model: 'gpt-4o', choices: [{ message: { role: 'assistant', content: 'TokenCircuit is an enterprise LLM gateway.' } }], usage: { promptTokens: 320, completionTokens: 140, totalTokens: 460 } },
+    0.0035
+  );
+  gateway.promptCache.set(
+    'claude-3-5-sonnet-20241022',
+    [{ role: 'user', content: 'Summarize system logs' }],
+    { id: 'msg_c2', model: 'claude-3-5-sonnet-20241022', content: [{ type: 'text', text: 'All circuits nominal.' }], usage: { input_tokens: 850, output_tokens: 210 } },
+    0.0057
+  );
+  // Record cache hits to demonstrate hit ratio and savings
+  gateway.promptCache.get('gpt-4o', [{ role: 'user', content: 'What is TokenCircuit?' }]);
+  gateway.promptCache.get('gpt-4o', [{ role: 'user', content: 'What is TokenCircuit?' }]);
+  gateway.promptCache.get('gpt-4o', [{ role: 'user', content: 'What is TokenCircuit?' }]);
+
+  // Seed Rate Limiter usage
+  gateway.rateLimiter.setTenantLimits('production-agents', { maxRpm: 120, maxTpm: 250000 });
+  gateway.rateLimiter.setTenantLimits('data-engineering', { maxRpm: 60, maxTpm: 100000 });
+  gateway.rateLimiter.setTenantLimits('autonomous-researcher', { maxRpm: 30, maxTpm: 50000 });
+  gateway.rateLimiter.recordUsage('production-agents', 45000);
+  gateway.rateLimiter.recordUsage('production-agents', 32000);
+  gateway.rateLimiter.recordUsage('data-engineering', 68000);
+  gateway.rateLimiter.recordUsage('autonomous-researcher', 12000);
+
+  // Seed Webhook Dispatcher
+  gateway.webhookDispatcher.setWebhookUrl('https://hooks.slack.com/services/T000/B000/XXXXX');
+  gateway.webhookDispatcher.dispatch({
+    eventType: 'circuit_tripped',
+    title: 'Provider Trip: AWS Bedrock',
+    summary: 'Bedrock failed 3 consecutive times with 503. State set to OPEN.',
+    severity: 'WARNING',
+    metadata: { providerId: 'bedrock', reason: 'Upstream AWS Bedrock 503 incident' }
+  });
+
   const outDir = path.resolve(__dirname, '../docs/images');
   const tempFramesDir = path.resolve(__dirname, '../temp_frames');
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
