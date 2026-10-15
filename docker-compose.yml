@@ -1,0 +1,23 @@
+services:
+  tokencircuit:
+    build: .
+    container_name: tokencircuit-gateway
+    restart: unless-stopped
+    ports:
+      - "50098:50098"
+    environment:
+      - PORT=50098
+      - HOST=0.0.0.0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - DATABASE_PATH=/app/data/tokencircuit.db
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:50098/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
