@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { TokenCircuitGateway } from '../dist/index.js';
+import { MockSandboxProvider } from '../dist/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,6 +15,11 @@ async function capture() {
     port: 50098,
     dbPath: ':memory:'
   });
+
+  // Register dedicated demo provider so live requests in Playground & GIF stream cleanly
+  const demoProvider = new MockSandboxProvider('demo-resilience', 'TokenCircuit Resilience Engine');
+  gateway.failoverChain.registerProvider(demoProvider, 1);
+  gateway.failoverChain.setPriorityOrder(['demo-resilience', 'bedrock', 'anthropic', 'openai']);
 
   await gateway.start(50098);
   console.log('✓ Gateway running on http://127.0.0.1:50098');
@@ -128,7 +134,6 @@ async function capture() {
   });
 
   // Seed spend to demonstrate status states
-  // data-engineering spend at $42.50 (85% of $50 = DOWNGRADED)
   gateway.ledger.recordTransaction({
     id: 'tx_seed_de',
     tenantId: 'data-engineering',
@@ -149,7 +154,6 @@ async function capture() {
     statusCode: 200
   });
 
-  // autonomous-researcher spend at $25.00 (100% of $25 = EXHAUSTED)
   gateway.ledger.recordTransaction({
     id: 'tx_seed_ar',
     tenantId: 'autonomous-researcher',
@@ -180,7 +184,7 @@ async function capture() {
   gateway.promptCache.set(
     'gpt-4o',
     [{ role: 'user', content: 'What is TokenCircuit?' }],
-    { id: 'chatcmpl_c1', model: 'gpt-4o', choices: [{ message: { role: 'assistant', content: 'TokenCircuit is an enterprise LLM gateway.' } }], usage: { promptTokens: 320, completionTokens: 140, totalTokens: 460 } },
+    { id: 'chatcmpl_c1', model: 'gpt-4o', choices: [{ message: { role: 'assistant', content: 'TokenCircuit is an enterprise LLM circuit breaker and budget gateway.' } }], usage: { promptTokens: 320, completionTokens: 140, totalTokens: 460 } },
     0.0035
   );
   gateway.promptCache.set(
@@ -226,44 +230,59 @@ async function capture() {
   });
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 1440, height: 960, deviceScaleFactor: 2 });
 
+  // 1. Desktop Dashboard (1440x960)
+  console.log('Capturing docs/images/tokencircuit_dashboard.png (Desktop)...');
+  await page.setViewport({ width: 1440, height: 960, deviceScaleFactor: 2 });
   await page.goto('http://localhost:50098', { waitUntil: 'networkidle0' });
   await new Promise((r) => setTimeout(r, 1200));
-
-  // 1. Full Dashboard
-  console.log('Capturing docs/images/tokencircuit_dashboard.png...');
   await page.screenshot({ path: path.join(outDir, 'tokencircuit_dashboard.png') });
 
-  // 2. Circuit Status Grid
+  // 2. Tablet View (768x1024 - iPad)
+  console.log('Capturing docs/images/tokencircuit_tablet.png (Tablet)...');
+  await page.setViewport({ width: 768, height: 1024, deviceScaleFactor: 2 });
+  await new Promise((r) => setTimeout(r, 600));
+  await page.screenshot({ path: path.join(outDir, 'tokencircuit_tablet.png') });
+
+  // 3. Mobile View (390x844 - iPhone)
+  console.log('Capturing docs/images/tokencircuit_mobile.png (Mobile)...');
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await new Promise((r) => setTimeout(r, 600));
+  await page.screenshot({ path: path.join(outDir, 'tokencircuit_mobile.png') });
+
+  // Reset back to Desktop for feature closeups
+  await page.setViewport({ width: 1440, height: 960, deviceScaleFactor: 2 });
+  await new Promise((r) => setTimeout(r, 400));
+
+  // 4. Circuit Status Grid
   console.log('Capturing docs/images/tokencircuit_circuit_grid.png...');
   const circuitElement = await page.$('div.grid.grid-cols-1.md\\:grid-cols-3');
   if (circuitElement) {
     await circuitElement.screenshot({ path: path.join(outDir, 'tokencircuit_circuit_grid.png') });
   }
 
-  // 3. Budget Meters
+  // 5. Budget Meters
   console.log('Capturing docs/images/tokencircuit_budget_meters.png...');
   const budgetElement = await page.$('div.grid.grid-cols-1.md\\:grid-cols-2');
   if (budgetElement) {
     await budgetElement.screenshot({ path: path.join(outDir, 'tokencircuit_budget_meters.png') });
   }
 
-  // 4. Failover Stream
+  // 6. Failover Stream
   console.log('Capturing docs/images/tokencircuit_failover_stream.png...');
   const streamElement = await page.$('div.rounded-xl.border.border-slate-800.bg-\\[\\#111622\\]\\/90');
   if (streamElement) {
     await streamElement.screenshot({ path: path.join(outDir, 'tokencircuit_failover_stream.png') });
   }
 
-  // 5. Chaos Lab
+  // 7. Chaos Lab
   console.log('Capturing docs/images/tokencircuit_chaos_lab.png...');
   const chaosElement = await page.$('div.grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-4');
   if (chaosElement) {
     await chaosElement.screenshot({ path: path.join(outDir, 'tokencircuit_chaos_lab.png') });
   }
 
-  // 6. Interactive Demo Recording for GIF
+  // 8. Interactive Demo Recording for GIF
   console.log('Recording interactive frames for tokencircuit_demo.gif...');
   
   // Capture initial state
@@ -272,8 +291,8 @@ async function capture() {
     await new Promise((r) => setTimeout(r, 120));
   }
 
-  // Click "Trip Anthropic Outage" in Chaos Lab
-  console.log('Triggering failover simulation...');
+  // Click "Send Live Request" in Playground
+  console.log('Triggering live inference test in playground...');
   const buttons = await page.$$('button');
   for (const b of buttons) {
     const text = await page.evaluate((el) => el.textContent, b);
@@ -300,25 +319,6 @@ async function capture() {
   for (let i = 22; i < 36; i++) {
     await page.screenshot({ path: path.join(tempFramesDir, `frame_${String(i).padStart(3, '0')}.png`) });
     await new Promise((r) => setTimeout(r, 120));
-  }
-
-  // 7. Mobile Studio Capture (iPhone 390x844)
-  console.log('Capturing docs/images/tokencircuit_mobile.png...');
-  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-  await new Promise((r) => setTimeout(r, 800));
-  await page.screenshot({ path: path.join(outDir, 'tokencircuit_mobile.png') });
-
-  // 8. Render Logo PNG from SVG
-  console.log('Rendering 1024x1024 logo.png from logo.svg...');
-  const logoSvgPath = path.join(outDir, 'logo.svg');
-  if (fs.existsSync(logoSvgPath)) {
-    const logoPage = await browser.newPage();
-    await logoPage.setViewport({ width: 1024, height: 1024, deviceScaleFactor: 1 });
-    const svgContent = fs.readFileSync(logoSvgPath, 'utf8');
-    await logoPage.setContent(`<!DOCTYPE html><html><body style="margin:0;padding:0;background:transparent;overflow:hidden;">${svgContent}</body></html>`);
-    await logoPage.screenshot({ path: path.join(outDir, 'logo.png'), omitBackground: true });
-    await logoPage.close();
-    console.log('✓ High-res logo.png rendered.');
   }
 
   await browser.close();

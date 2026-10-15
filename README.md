@@ -83,6 +83,12 @@ flowchart TD
   <img src="docs/images/tokencircuit_dashboard.png" alt="TokenCircuit Studio Dashboard" width="100%" />
 </p>
 
+### Multi-Device Responsive Design (Tablet & Mobile)
+<p align="center">
+  <img src="docs/images/tokencircuit_tablet.png" alt="TokenCircuit Tablet Studio (iPad 768px)" width="62%" />
+  <img src="docs/images/tokencircuit_mobile.png" alt="TokenCircuit Mobile Studio (iPhone 390px)" width="36%" />
+</p>
+
 ### Circuit Breakers & Tenant Spend Meters
 <p align="center">
   <img src="docs/images/tokencircuit_circuit_grid.png" alt="Multi-Provider Circuit Breakers" width="49%" />

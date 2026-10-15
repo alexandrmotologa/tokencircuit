@@ -1,69 +1,131 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="100%" height="100%">
   <defs>
-    <linearGradient id="tc-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0b1120"/>
-      <stop offset="100%" stop-color="#020617"/>
+    <!-- Facet Gradients for Volumetric Depth -->
+    <linearGradient id="facet-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#334155"/>
     </linearGradient>
-    <linearGradient id="tc-emerald" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="facet-mid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="facet-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="facet-steel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#64748b"/>
+    </linearGradient>
+
+    <!-- Electric Emerald Core Gradients -->
+    <linearGradient id="emerald-glow" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#34d399"/>
       <stop offset="100%" stop-color="#059669"/>
     </linearGradient>
-    <linearGradient id="tc-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38bdf8"/>
-      <stop offset="100%" stop-color="#0284c7"/>
-    </linearGradient>
-    <linearGradient id="tc-amber" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fbbf24"/>
-      <stop offset="100%" stop-color="#d97706"/>
-    </linearGradient>
-    <filter id="tc-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="10" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
   </defs>
 
-  <!-- Background Shield Canvas -->
-  <rect width="512" height="512" rx="104" fill="url(#tc-bg)"/>
-  <rect width="504" height="504" x="4" y="4" rx="100" fill="none" stroke="#1e293b" stroke-width="3"/>
+  <!-- 1. Luxury White Squircle Container -->
+  <rect x="24" y="24" width="976" height="976" rx="220" fill="#ffffff" stroke="#e2e8f0" stroke-width="8"/>
 
-  <!-- Outer Protective Circuit Hexagon -->
-  <path d="M 256 68 L 416 160 L 416 348 L 256 444 L 96 348 L 96 160 Z"
-        fill="none" stroke="#1e293b" stroke-width="8" stroke-linejoin="round"/>
+  <!-- 2. Massive Hexagonal Gateway Frame -->
+  <polygon points="512,110 840,299 840,725 512,914 184,725 184,299"
+           fill="#f8fafc" stroke="#0f172a" stroke-width="32" stroke-linejoin="round"/>
+  <polygon points="512,142 812,315 812,709 512,882 212,709 212,315"
+           fill="none" stroke="#10b981" stroke-width="4" stroke-dasharray="16 12" opacity="0.6"/>
 
-  <!-- Inner Dynamic Circuit Tracks -->
-  <path d="M 256 100 L 384 174 L 384 334 L 256 410 L 128 334 L 128 174 Z"
-        fill="#0f172a" stroke="url(#tc-emerald)" stroke-width="4" stroke-linejoin="round" filter="url(#tc-glow)"/>
+  <!-- 3. Watertight Solid Base Silhouette (Prevents any background vertex gaps) -->
+  <path d="M 512 210
+           L 440 230 L 360 190 L 250 200 L 190 270 L 180 370 L 220 470 L 280 520 L 340 490 L 390 420
+           L 410 470 L 430 560 L 460 650 L 512 750
+           L 564 650 L 594 560 L 614 470 L 634 420 L 684 490 L 744 520 L 804 470 L 844 370 L 834 270 L 774 200 L 664 190 L 584 230 Z"
+        fill="#090d16"/>
 
-  <!-- Circuit Trace Nodes & Paths -->
-  <!-- Top Trace (Bedrock) -->
-  <path d="M 256 100 L 256 170" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="256" cy="170" r="8" fill="#38bdf8"/>
+  <!-- ============================================== -->
+  <!-- 4. LOW-POLY AEGIS BIGHORN RAM (Circuit Guard) -->
+  <!-- ============================================== -->
 
-  <!-- Left Trace (Anthropic) -->
-  <path d="M 128 256 L 196 256" stroke="#34d399" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="196" cy="256" r="8" fill="#34d399"/>
+  <!-- A. LEFT UPWARD-SWEEPING BIGHORN (Massive Grounding Arc) -->
+  <polygon points="440,230 360,190 320,240 410,290" fill="url(#facet-light)"/>
+  <polygon points="360,190 250,200 240,270 320,240" fill="url(#facet-light)"/>
+  <polygon points="250,200 190,270 210,340 240,270" fill="url(#facet-mid)"/>
+  <polygon points="190,270 180,370 230,410 210,340" fill="url(#facet-mid)"/>
+  <polygon points="180,370 220,470 270,450 230,410" fill="url(#facet-dark)"/>
+  <polygon points="220,470 280,520 310,480 270,450" fill="#0f172a"/>
 
-  <!-- Right Trace (OpenAI) -->
-  <path d="M 384 256 L 316 256" stroke="#fbbf24" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="316" cy="256" r="8" fill="#fbbf24"/>
+  <!-- Inner Ridge & Voltage Bands (Left) -->
+  <polygon points="410,290 320,240 240,270 310,330" fill="#64748b"/>
+  <polygon points="240,270 210,340 270,380 310,330" fill="#475569"/>
+  <polygon points="210,340 230,410 270,450 270,380" fill="#1e293b"/>
+  <polygon points="270,450 310,480 340,490 320,430" fill="#0f172a"/>
 
-  <!-- Central Circuit Breaker Core Token Node -->
-  <circle cx="256" cy="256" r="48" fill="#0b0f17" stroke="url(#tc-emerald)" stroke-width="6"/>
-  <circle cx="256" cy="256" r="32" fill="url(#tc-emerald)" opacity="0.15"/>
-  
-  <!-- Circuit Breaker Lightning Bolt Symbol -->
-  <path d="M 264 220 L 238 252 L 256 252 L 246 292 L 276 256 L 256 256 Z"
-        fill="url(#tc-emerald)" filter="url(#tc-glow)"/>
+  <!-- High-Voltage Energy Shunt Insets (Left Horn) -->
+  <polygon points="250,200 285,198 275,250 240,270" fill="url(#emerald-glow)"/>
+  <polygon points="190,270 210,340 225,320 200,280" fill="url(#emerald-glow)"/>
 
-  <!-- Bottom Relay Trace -->
-  <path d="M 256 304 L 256 374 L 284 390" stroke="#34d399" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="284" cy="390" r="7" fill="#34d399"/>
+  <!-- B. RIGHT UPWARD-SWEEPING BIGHORN (Massive Grounding Arc) -->
+  <polygon points="584,230 664,190 704,240 614,290" fill="url(#facet-light)"/>
+  <polygon points="664,190 774,200 784,270 704,240" fill="url(#facet-light)"/>
+  <polygon points="774,200 834,270 814,340 784,270" fill="url(#facet-mid)"/>
+  <polygon points="834,270 844,370 794,410 814,340" fill="url(#facet-mid)"/>
+  <polygon points="844,370 804,470 754,450 794,410" fill="url(#facet-dark)"/>
+  <polygon points="804,470 744,520 714,480 754,450" fill="#0f172a"/>
 
-  <!-- Small Peripheral Contact Nodes -->
-  <circle cx="96" cy="160" r="6" fill="#38bdf8"/>
-  <circle cx="416" cy="160" r="6" fill="#fbbf24"/>
-  <circle cx="416" cy="348" r="6" fill="#34d399"/>
-  <circle cx="96" cy="348" r="6" fill="#34d399"/>
-  <circle cx="256" cy="444" r="6" fill="#38bdf8"/>
-  <circle cx="256" cy="68" r="6" fill="#34d399"/>
+  <!-- Inner Ridge & Voltage Bands (Right) -->
+  <polygon points="614,290 704,240 784,270 714,330" fill="#475569"/>
+  <polygon points="784,270 814,340 754,380 714,330" fill="#334155"/>
+  <polygon points="814,340 794,410 754,450 754,380" fill="#1e293b"/>
+  <polygon points="754,450 714,480 684,490 704,430" fill="#0f172a"/>
+
+  <!-- High-Voltage Energy Shunt Insets (Right Horn) -->
+  <polygon points="774,200 739,198 749,250 784,270" fill="url(#emerald-glow)"/>
+  <polygon points="834,270 814,340 799,320 824,280" fill="url(#emerald-glow)"/>
+
+  <!-- C. CRANIAL SHIELD & FOREHEAD PLATE -->
+  <polygon points="512,210 584,230 550,290 512,310" fill="url(#facet-steel)"/>
+  <polygon points="512,210 440,230 474,290 512,310" fill="#cbd5e1"/>
+  <polygon points="440,230 410,290 460,350 474,290" fill="#94a3b8"/>
+  <polygon points="584,230 614,290 564,350 550,290" fill="#64748b"/>
+
+  <!-- Central Forehead Keel & Strike Plate -->
+  <polygon points="512,310 474,290 460,350 512,410" fill="#94a3b8"/>
+  <polygon points="512,310 550,290 564,350 512,410" fill="#64748b"/>
+  <polygon points="512,410 460,350 430,420 512,460" fill="#64748b"/>
+  <polygon points="512,410 564,350 594,420 512,460" fill="#475569"/>
+
+  <!-- D. BROW PLATES & PREDATORY EMERALD EYES -->
+  <polygon points="460,350 400,390 430,420" fill="#1e293b"/>
+  <polygon points="400,390 380,410 420,440 430,420" fill="#0f172a"/>
+  <!-- Left Emerald Eye -->
+  <polygon points="410,415 442,410 452,425 420,430" fill="url(#emerald-glow)"/>
+  <polygon points="426,414 438,412 442,420 430,422" fill="#ffffff"/>
+
+  <!-- Right Eye Socket -->
+  <polygon points="564,350 624,390 594,420" fill="#0f172a"/>
+  <polygon points="624,390 644,410 604,440 594,420" fill="#090d16"/>
+  <!-- Right Emerald Eye -->
+  <polygon points="614,415 582,410 572,425 604,430" fill="url(#emerald-glow)"/>
+  <polygon points="598,414 586,412 582,420 594,422" fill="#ffffff"/>
+
+  <!-- E. BROAD MUSCULAR MUZZLE & JAW (Champion Ram Proportions) -->
+  <polygon points="512,460 450,510 512,560 574,510" fill="#cbd5e1"/>
+  <polygon points="430,420 450,510 410,490" fill="#64748b"/>
+  <polygon points="594,420 574,510 614,490" fill="#334155"/>
+
+  <!-- Whisker Pads & Flared Muzzle Cheeks (Titanium Slate) -->
+  <polygon points="450,510 512,560 480,630 420,580" fill="#64748b"/>
+  <polygon points="574,510 512,560 544,630 604,580" fill="#475569"/>
+
+  <!-- Chiseled Nose Plate & Grounding Chin -->
+  <polygon points="512,560 480,600 512,620 544,600" fill="#090d16"/>
+  <polygon points="480,630 512,620 544,630 512,670" fill="#1e293b"/>
+  <polygon points="512,620 530,640 512,660 494,640" fill="#090d16"/>
+
+  <!-- F. CHEST GORGET & GROUNDING SHIELD (Surge Interrupter) -->
+  <polygon points="512,670 450,700 512,770 574,700" fill="#1e293b"/>
+  <polygon points="450,700 420,580 480,630 512,670" fill="#0f172a"/>
+  <polygon points="574,700 604,580 544,630 512,670" fill="#090d16"/>
+
+  <!-- Circuit Breaker Emerald Shunt Crystal Core -->
+  <polygon points="512,690 536,725 512,750 488,725" fill="url(#emerald-glow)"/>
 </svg>
